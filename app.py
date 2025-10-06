@@ -178,6 +178,13 @@ def safe_query(prompt: str):
         raise
 
 def main():
+    # --- DEBUG: Print collection info at startup ---
+    embedding_model = EmbeddingModel(model_name='all-MiniLM-L6-v2')
+    vector_store = VectorStore(embedding_model=embedding_model)
+    info = vector_store.get_collection_info()
+    print("DEBUG: Collection info at app startup:", info)
+    # --- END DEBUG ---
+    
     # Title and description
     st.title("🚨 Disaster Preparedness Chatbot")
     st.markdown("""

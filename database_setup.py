@@ -5,6 +5,7 @@ import logging
 import boto3
 from pathlib import Path
 from typing import List, Optional
+from config import Config
 
 # Configure logging
 logging.basicConfig(
@@ -231,6 +232,8 @@ def update_metadata_store(docs: List) -> bool:
 
 def main() -> bool:
     """Main execution function with comprehensive error handling."""
+    print("DEBUG: CHROMA_DB_PATH =", Config().CHROMA_DB_PATH)
+
     try:
         logger.info("Starting database setup...")
         
