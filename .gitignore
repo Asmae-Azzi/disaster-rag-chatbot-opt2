@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+.env
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Local data and DBs
+chroma_db/
+data/
+vector_store/
+
+# OS/IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+# Environment variables
+.env
+
+# Python specific files and directories
+__pycache__/
+*.pyc
+*.log
+venv/
+.venv/
+.vscode/
+
+# Database directories (ChromaDB and SQLite)
+chroma_db/
+data/
+
+# Streamlit specific
+.streamlit/secrets.toml
