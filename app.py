@@ -1,10 +1,25 @@
 import streamlit as st
 import traceback
 import logging
+from modules.vector_store import VectorStore
+from modules.embeddings import EmbeddingModel
+from database_setup import main as setup_knowledge_base
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def is_knowledge_base_empty():
+    try:
+        embedding_model = EmbeddingModel(model_name='all-MiniLM-L6-v2')
+        vector_store = VectorStore(embedding_model=embedding_model)
+        info = vector_store.get_collection_info()
+        return info.get('document_count', 0) == 0
+    except Exception as e:
+        # If there's an error accessing the collection, treat as empty
+        return True
+        
 
 # Import our custom modules with error handling
 try:
@@ -173,6 +188,15 @@ def main():
     Ask questions about disaster preparedness and get accurate answers!
     """)
     
+    if is_knowledge_base_empty():
+        st.warning("Knowledge base is empty. Initializing, please wait...")
+        success = setup_knowledge_base()
+        if success:
+            st.success("Knowledge base loaded successfully!")
+        else:
+            st.error("Failed to load knowledge base. Please check logs.")
+            return  # Stop further execution if setup fails
+        
     # Show initialization error if any
     if st.session_state.initialization_error:
         st.error(f"System initialization failed: {st.session_state.initialization_error}")
