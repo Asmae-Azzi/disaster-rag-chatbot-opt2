@@ -65,36 +65,48 @@ def load_documents_from_s3(pdf_processor):  #"Load documents directly from S3 bu
             aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
             region_name=os.getenv('AWS_REGION', 'us-east-1')
         )
-        
+
         bucket_name = os.getenv('S3_BUCKET_NAME', 'your-bucket-name')
         prefix = os.getenv('S3_PREFIX', 'documents/')
-        
+
         logger.info(f"Connecting to S3 bucket: {bucket_name}")
-        
-        raw_documents = []
-        # List objects in S3
-        response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
-        
-        for obj in response.get('Contents', []):
-            if obj['Key'].endswith('.pdf'):
-                logger.info(f"Processing S3 object: {obj['Key']}")
-                try:
-                    # Download PDF content
-                    pdf_response = s3_client.get_object(Bucket=bucket_name, Key=obj['Key'])
-                    pdf_content = pdf_response['Body'].read()
-                    
-                    # Process PDF content
-                    chunks = pdf_processor.process_pdf(pdf_content, filename=obj['Key'])
-                    raw_documents.extend(chunks)
-                    logger.info(f"Successfully processed {obj['Key']}: {len(chunks)} chunks")
-                    
-                except Exception as e:
-                    logger.error(f"Error processing {obj['Key']}: {e}")
-                    continue
-        
+        logger.info(f"Using S3 prefix: '{prefix}'")
+
+        def _load_with_prefix(current_prefix: str):
+            loaded_docs = []
+            paginator = s3_client.get_paginator('list_objects_v2')
+            page_iter = paginator.paginate(Bucket=bucket_name, Prefix=current_prefix)
+
+            total_objects = 0
+            for page in page_iter:
+                for obj in page.get('Contents', []) or []:
+                    total_objects += 1
+                    key = obj['Key']
+                    if key.lower().endswith('.pdf'):
+                        logger.info(f"Processing S3 object: {key}")
+                        try:
+                            pdf_response = s3_client.get_object(Bucket=bucket_name, Key=key)
+                            pdf_content = pdf_response['Body'].read()
+                            chunks = pdf_processor.process_pdf(pdf_content, filename=key)
+                            loaded_docs.extend(chunks)
+                            logger.info(f"Successfully processed {key}: {len(chunks)} chunks")
+                        except Exception as e:
+                            logger.error(f"Error processing {key}: {e}")
+                            continue
+            logger.info(f"Objects scanned under prefix '{current_prefix}': {total_objects}")
+            return loaded_docs
+
+        # First try with the provided prefix
+        raw_documents = _load_with_prefix(prefix)
+
+        # If nothing found, retry without prefix as a fallback
+        if not raw_documents:
+            logger.warning(f"No PDF documents found under prefix '{prefix}'. Retrying with no prefix...")
+            raw_documents = _load_with_prefix('')
+
         logger.info(f"Total documents loaded from S3: {len(raw_documents)}")
         return raw_documents
-        
+
     except Exception as e:
         logger.error(f"Error connecting to S3: {e}")
         return []
