@@ -263,8 +263,8 @@ def main() -> bool:
         raw_documents = load_documents_from_s3(pdf_processor)
         
         if not raw_documents:
-            logger.warning("No documents were loaded from S3")
-            return False
+            logger.warning("No documents were loaded from S3. Continuing without documents so the app can start. Verify S3 settings and permissions.")
+            return True
         
         logger.info("Initializing embeddings model...")
         embeddings_model = EmbeddingModel(model_name='all-MiniLM-L6-v2')
