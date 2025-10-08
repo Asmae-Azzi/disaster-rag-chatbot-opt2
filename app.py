@@ -1,23 +1,29 @@
 import streamlit as st
 import traceback
 import logging
-from modules.vector_store import VectorStore
-from modules.embeddings import EmbeddingModel
 from database_setup import main as setup_knowledge_base
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Page configuration (must be the first Streamlit call)
+st.set_page_config(
+    page_title="Disaster Preparedness Chatbot",
+    page_icon="🚨",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
 
 def is_knowledge_base_empty():
     try:
-        embedding_model = EmbeddingModel(model_name='all-MiniLM-L6-v2')
-        vector_store = VectorStore(embedding_model=embedding_model)
+        # Use cached factories to avoid duplicate heavy initializations
+        vector_store = get_vector_store_cached()
         info = vector_store.get_collection_info()
         return info.get('document_count', 0) == 0
     except Exception as e:
-        # If there's an error accessing the collection, treat as empty
+        logger.error(f"Error checking knowledge base emptiness: {e}")
         return True
         
 
@@ -34,14 +40,6 @@ except ImportError as e:
     st.error("Please ensure all modules exist and dependencies are installed")
     st.stop()
 
-
-# Page configuration
-st.set_page_config(
-    page_title="Disaster Preparedness Chatbot",
-    page_icon="🚨",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
 
 # Initialize session state with validation
 def init_session_state():
@@ -94,6 +92,8 @@ def validate_component(component, component_name: str) -> bool:
             required_methods = ['get_stats', 'get_all_documents']
         elif component_name == "rag_pipeline":
             required_methods = ['query']
+        elif component_name == "vector_store":
+            required_methods = ['get_collection_info']
         else:
             return True  # Skip validation for other components
             
@@ -117,6 +117,8 @@ def initialize_system() -> bool:
             vector_store = get_vector_store_cached()
             logger.info("Initializing metadata store (cached)...")
             metadata_store = get_metadata_store_cached()
+            if not validate_component(vector_store, "vector_store"):
+                raise Exception("Vector store validation failed")
             if not validate_component(metadata_store, "metadata_store"):
                 raise Exception("Metadata store validation failed")
             
@@ -178,12 +180,12 @@ def safe_query(prompt: str):
         raise
 
 def main():
-    # --- DEBUG: Print collection info at startup ---
-    embedding_model = EmbeddingModel(model_name='all-MiniLM-L6-v2')
-    vector_store = VectorStore(embedding_model=embedding_model)
-    info = vector_store.get_collection_info()
-    print("DEBUG: Collection info at app startup:", info)
-    # --- END DEBUG ---
+    # --- DEBUG: Log collection info at startup (uses cached resources) ---
+    try:
+        info = get_vector_store_cached().get_collection_info()
+        logger.info(f"Collection info at app startup: {info}")
+    except Exception as e:
+        logger.warning(f"Unable to fetch collection info at startup: {e}")
     
     # Title and description
     st.title("🚨 Disaster Preparedness Chatbot")
@@ -196,11 +198,10 @@ def main():
     """)
     
     if is_knowledge_base_empty():
-        st.warning("Knowledge base is empty. Initializing, please wait...")
-        success = setup_knowledge_base()
-        if success:
-            st.success("Knowledge base loaded successfully!")
-        else:
+        # Auto-initialize knowledge base silently on first deploy
+        with st.spinner("Preparing knowledge base..."):
+            success = setup_knowledge_base()
+        if not success:
             st.error("Failed to load knowledge base. Please check logs.")
             return  # Stop further execution if setup fails
         
@@ -215,36 +216,7 @@ def main():
     if not st.session_state.system_initialized and not st.session_state.initialization_error:
         initialize_system()
     
-    # Sidebar for knowledge base info
-    with st.sidebar:
-        st.header("📚 Knowledge Base Information")
-        
-        if st.session_state.system_initialized:
-            try:
-                # Display current knowledge base stats
-                stats = safe_get_stats()
-                st.metric("Documents", stats.get('total_documents', 0))
-                st.metric("Total Chunks", stats.get('total_chunks', 0))
-                
-                # Document list
-                st.subheader("📄 Available Documents")
-                documents = safe_get_documents()
-                if documents:
-                    for doc in documents:
-                        try:
-                            with st.expander(f"📄 {doc.get('filename', 'Unknown')}"):
-                                st.write(f"**Added:** {doc.get('upload_date', 'Unknown')}")
-                                st.write(f"**Size:** {doc.get('file_size', 0):,} bytes")
-                                st.write(f"**Chunks:** {doc.get('num_chunks', 0)}")
-                        except Exception as e:
-                            logger.error(f"Error displaying document {doc}: {e}")
-                            st.error(f"Error displaying document")
-                else:
-                    st.info("No documents in knowledge base yet.")
-                    st.markdown("**Administrator:** Run `python database_setup.py` to load documents.")
-            except Exception as e:
-                st.error(f"Error loading sidebar information: {e}")
-                logger.error(f"Sidebar error: {e}")
+    # Sidebar removed: hide KB stats and documents from UI
     
     # Main chat interface
     if st.session_state.system_initialized:
@@ -289,6 +261,6 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        st.error(f"Application crashed: {e}")
+        # Avoid Streamlit UI calls in CLI context
         logger.error(f"Application crash: {e}")
         logger.error(f"Traceback: {traceback.format_exc()}")

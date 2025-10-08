@@ -7,7 +7,8 @@ class Config:
         self.openai_api_key = os.environ.get("OPENAI_API_KEY")
         self.aws_access_key_id = os.environ.get("AWS_ACCESS_KEY_ID")
         self.aws_secret_access_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
-        self.aws_region_name = os.environ.get("AWS_REGION_NAME")
+        # Unify region: prefer AWS_REGION; fallback to AWS_REGION_NAME
+        self.aws_region_name = os.environ.get("AWS_REGION") or os.environ.get("AWS_REGION_NAME")
         self.s3_bucket_name = os.environ.get("S3_BUCKET_NAME")
     
     # ChromaDB settings

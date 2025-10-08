@@ -26,6 +26,8 @@ class MetadataStore:
         """Initialize the database schema"""
         try:
             with sqlite3.connect(self.db_path) as conn:
+                # Ensure foreign key constraints are enforced
+                conn.execute("PRAGMA foreign_keys = ON")
                 cursor = conn.cursor()
                 
                 # Create documents table
@@ -72,6 +74,7 @@ class MetadataStore:
         """
         try:
             with sqlite3.connect(self.db_path) as conn:
+                conn.execute("PRAGMA foreign_keys = ON")
                 cursor = conn.cursor()
                 
                 now = datetime.now().isoformat()
@@ -109,6 +112,7 @@ class MetadataStore:
         """Get document metadata by filename"""
         try:
             with sqlite3.connect(self.db_path) as conn:
+                conn.execute("PRAGMA foreign_keys = ON")
                 conn.row_factory = sqlite3.Row # Return rows as dictionaries
                 cursor = conn.cursor()
                 
@@ -125,6 +129,7 @@ class MetadataStore:
         """Get all document metadata"""
         try:
             with sqlite3.connect(self.db_path) as conn:
+                conn.execute("PRAGMA foreign_keys = ON")
                 conn.row_factory = sqlite3.Row
                 cursor = conn.cursor()
                 
@@ -141,6 +146,7 @@ class MetadataStore:
         """Get overall statistics about the stored documents and chunks"""
         try:
             with sqlite3.connect(self.db_path) as conn:
+                conn.execute("PRAGMA foreign_keys = ON")
                 cursor = conn.cursor()
                 
                 cursor.execute("SELECT COUNT(*) FROM documents")
@@ -195,6 +201,7 @@ class MetadataStore:
         """Get all chunks for a specific document"""
         try:
             with sqlite3.connect(self.db_path) as conn:
+                conn.execute("PRAGMA foreign_keys = ON")
                 conn.row_factory = sqlite3.Row
                 cursor = conn.cursor()
                 
