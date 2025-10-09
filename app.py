@@ -15,6 +15,61 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Global styles (custom theme + chat bubbles)
+st.markdown(
+    """
+    <style>
+    :root {
+        --azy-primary: #0ea5e9; /* cyan-500 */
+        --azy-primary-dark: #0284c7; /* cyan-600 */
+        --azy-bg: #0b1220; /* dark slate */
+        --azy-card: #111827; /* slate-900 */
+        --azy-text: #e5e7eb; /* gray-200 */
+        --azy-muted: #9ca3af; /* gray-400 */
+    }
+    .azy-hero {
+        background: radial-gradient(1200px 400px at 10% -10%, rgba(14,165,233,0.25), transparent),
+                    radial-gradient(1200px 400px at 90% -10%, rgba(99,102,241,0.2), transparent);
+        padding: 24px 24px 8px 24px;
+        border-radius: 16px;
+        border: 1px solid rgba(255,255,255,0.06);
+        margin-bottom: 8px;
+    }
+    .azy-title {
+        display:flex; align-items:center; gap:12px; font-weight:800; font-size: 26px; color: var(--azy-text);
+    }
+    .azy-badge { 
+        display:inline-block; padding: 4px 10px; border-radius: 999px; 
+        background: linear-gradient(90deg, var(--azy-primary), #6366f1);
+        color: white; font-size: 12px; font-weight: 700; letter-spacing: 0.3px;
+    }
+    .azy-sub { color: var(--azy-muted); margin-top: 6px; font-size: 14px; }
+    .azy-card {
+        background: var(--azy-card); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 12px;
+    }
+    /* Chat bubbles */
+    [data-testid="stChatMessage"] {
+        background: var(--azy-card) !important;
+        border: 1px solid rgba(255,255,255,0.06) !important;
+        border-radius: 12px !important;
+        padding: 12px 14px !important;
+        margin-bottom: 10px !important;
+    }
+    [data-testid="stChatMessage"] p { color: var(--azy-text) !important; }
+    /* Example prompt chips */
+    .azy-chip { 
+        display:inline-block; margin: 4px 6px 0 0; padding: 6px 10px; border-radius: 999px; 
+        background: rgba(14,165,233,0.12); color: var(--azy-text); border: 1px solid rgba(14,165,233,0.35);
+        font-size: 12px; cursor: pointer;
+    }
+    .azy-chip:hover { background: rgba(14,165,233,0.2); }
+    /* Footer */
+    .azy-footer { color: var(--azy-muted); font-size: 12px; text-align:center; margin-top: 12px; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 
 def is_knowledge_base_empty():
     try:
@@ -187,11 +242,16 @@ def main():
     except Exception as e:
         logger.warning(f"Unable to fetch collection info at startup: {e}")
     
-    # Title and description
-    st.title("🚨 **Azy** 🚨 THE Disaster Preparedness Chatbot")
-    st.markdown("""
-    Meet **Azy** ! Your assistant for disaster preparedness. Ask questions and get concise, context-grounded answers from expert-curated documents.
-    """)
+    # Title and description (hero header)
+    st.markdown(
+        """
+        <div class="azy-hero">
+            <div class="azy-title">🚨 <span>Azy — Disaster Preparedness Chatbot</span> <span class="azy-badge">LIVE</span></div>
+            <div class="azy-sub">Ask questions and get concise, source-grounded answers from expert-curated documents.</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     
     if is_knowledge_base_empty():
         # Auto-initialize knowledge base silently on first deploy
@@ -217,15 +277,34 @@ def main():
     # Main chat interface
     if st.session_state.system_initialized:
         st.header("❓ Ask Azy")
+
+        # Example prompts as quick chips
+        examples = [
+            "What should be in a 72-hour emergency kit?",
+            "How do I prepare for a flood?",
+            "Steps to take during an earthquake",
+            "How to make a family emergency plan?",
+        ]
+        chip_html = " ".join([f'<span class="azy-chip" onclick="window.parent.postMessage({{type:\'azy_prompt\', value:\'{e}\'}}, \"*\")">{e}</span>' for e in examples])
+        st.markdown(f"<div class='azy-card'>{chip_html}</div>", unsafe_allow_html=True)
+
+        # Handle example chip clicks via components events (Streamlit reruns won’t catch JS; support via buttons too)
+        cols = st.columns(len(examples))
+        queued_prompt = None
+        for i, e in enumerate(examples):
+            if cols[i].button(e, key=f"azy_btn_{i}"):
+                queued_prompt = e
         
-        # Simple chat input without history
-        if prompt := st.chat_input("Ask me about disaster preparedness..."):
+        # Simple chat input without history + queued examples
+        user_input = st.chat_input("Ask me about disaster preparedness...")
+        prompt = queued_prompt or user_input
+        if prompt:
             # Display user question
-            with st.chat_message("user"):
+            with st.chat_message("user", avatar="🧑"):
                 st.markdown(prompt)
             
             # Generate and display response
-            with st.chat_message("assistant"):
+            with st.chat_message("assistant", avatar="🤖"):
                 with st.spinner("Azy is searching the knowledge base..."):
                     try:
                         result = safe_query(prompt)
