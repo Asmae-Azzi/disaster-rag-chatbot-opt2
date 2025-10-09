@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 # Page configuration (must be the first Streamlit call)
 st.set_page_config(
-    page_title="Disaster Preparedness Chatbot",
+    page_title="Azy, Your Disaster Preparedness Chatbot",
     page_icon="🚨",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -246,7 +246,7 @@ def main():
     st.markdown(
         """
         <div class="azy-hero">
-            <div class="azy-title">🚨 <span>Azy — Disaster Preparedness Chatbot</span> <span class="azy-badge">LIVE</span></div>
+            <div class="azy-title">🚨 <span>Meet Azy, Your Disaster Preparedness Chatbot</span> <span class="azy-badge">LIVE</span></div>
             <div class="azy-sub">Ask questions and get concise, source-grounded answers from expert-curated documents.</div>
         </div>
         """,
