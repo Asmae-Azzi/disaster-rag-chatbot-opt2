@@ -33,6 +33,18 @@ st.markdown(
     .azy-bubble { background:white; color:#1f2937; border-radius: 12px; padding: 12px 14px; display:inline-block; position: relative; font-size: 14px; }
     .azy-bubble:after { content: ""; position:absolute; left: -8px; top: 18px; width:0; height:0; border-top:8px solid transparent; border-bottom:8px solid transparent; border-right:8px solid white; }
     .azy-muted { color: var(--azy-muted); font-size: 13px; }
+    /* Sidebar compact */
+    [data-testid="stSidebar"] { width: 220px !important; min-width: 220px !important; }
+    [data-testid="stSidebarNav"] ul { gap: 4px; }
+    [data-testid="stSidebarNav"] a { padding: 6px 8px; font-size: 13px; }
+    /* Bubble-like button */
+    .azy-bubble-btn button { 
+        background: white !important; color:#1f2937 !important; border-radius:12px !important; 
+        border:1px solid rgba(0,0,0,0.06) !important; padding: 10px 14px !important; font-weight:600 !important; 
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08) !important;
+    }
+    .azy-bubble-btn button:hover { filter: brightness(0.98); }
+    .azy-bubble-btn small { color:#6b7280; display:block; margin-top:6px; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -88,18 +100,21 @@ with col1:
     )
 
 with col2:
-    st.markdown(
-        """
-        <div class="azy-section" style="display:flex; gap:14px; align-items:center;">
-            <div class="azy-avatar">👩‍💻</div>
-            <div>
-                <div class="azy-bubble">Hello! How can I help you today?</div>
-                <div class="azy-muted" style="margin-top:8px;">Meet the inspiration for the Azy ChatBot...</div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown("<div class=\"azy-section\" style=\"display:flex; gap:14px; align-items:center;\">", unsafe_allow_html=True)
+    colA, colB = st.columns([0.25, 0.75])
+    with colA:
+        st.markdown("<div class=\"azy-avatar\">👩‍💻</div>", unsafe_allow_html=True)
+    with colB:
+        from streamlit import switch_page as _sp  # type: ignore
+        clicked = st.button("Hello! How can I help you today?", key="azy_bubble_btn", help="Open the Azy chatbot", use_container_width=True)
+        st.markdown("<small class=\"azy-muted\">Meet the inspiration for the Azy ChatBot...</small>", unsafe_allow_html=True)
+        if clicked:
+            try:
+                st.switch_page("app.py")
+            except Exception:
+                # Fallback for older Streamlit versions
+                st.experimental_set_query_params(page="app")
+    st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("\n")
     st.markdown(
         """
