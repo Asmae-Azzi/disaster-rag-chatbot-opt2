@@ -82,10 +82,10 @@ class LLMHandler:
             "Content-Type": "application/json"
         }
         
-        messages = [{"role": "system", "content": "You are an AI assistant specialized in providing accurate information about disaster preparedness based on the provided context. Answer the user's question only using the provided context. If the answer is not in the context, state that you cannot answer based on the provided documents and suggest seeking official emergency information."}]
+        messages = [{"role": "system", "content": "You are Azy, a helpful assistant specialized in disaster preparedness. Answer directly and concisely using ONLY the provided context. Do NOT start with phrases like 'Based on the provided information' or 'According to the context'. If the answer is not in the context, say you cannot answer from the documents and suggest checking official sources."}]
         
         if context:
-            messages.append({"role": "user", "content": f"Based on the following information, answer the question:\n\nContext: {context}\n\nQuestion: {prompt}"})
+            messages.append({"role": "user", "content": f"Use the following context to answer the question directly. Do not add prefaces.\n\nContext:\n{context}\n\nQuestion:\n{prompt}"})
         else:
             messages.append({"role": "user", "content": prompt})
             

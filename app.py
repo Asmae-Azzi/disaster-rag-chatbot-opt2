@@ -135,7 +135,7 @@ def initialize_system() -> bool:
             st.session_state.system_initialized = True
             st.session_state.initialization_error = None
             
-            st.success("System initialized successfully!")
+            # Hide success toast to keep UI clean on deploy
             logger.info("System initialization completed successfully")
             return True
             
@@ -188,13 +188,9 @@ def main():
         logger.warning(f"Unable to fetch collection info at startup: {e}")
     
     # Title and description
-    st.title("🚨 Disaster Preparedness Chatbot")
+    st.title("🚨 **Azy** 🚨 THE Disaster Preparedness Chatbot")
     st.markdown("""
-    Welcome to the Disaster Preparedness Chatbot! This AI-powered tool provides accurate, 
-    context-specific information about disaster preparedness and resilience from expert-curated documents.
-    
-    **How it works:**
-    Ask questions about disaster preparedness and get accurate answers!
+    Meet **Azy** ! Your assistant for disaster preparedness. Ask questions and get concise, context-grounded answers from expert-curated documents.
     """)
     
     if is_knowledge_base_empty():
@@ -220,7 +216,7 @@ def main():
     
     # Main chat interface
     if st.session_state.system_initialized:
-        st.header("❓ Ask About Disaster Preparedness")
+        st.header("❓ Ask Azy")
         
         # Simple chat input without history
         if prompt := st.chat_input("Ask me about disaster preparedness..."):
@@ -230,7 +226,7 @@ def main():
             
             # Generate and display response
             with st.chat_message("assistant"):
-                with st.spinner("Searching knowledge base..."):
+                with st.spinner("Azy is searching the knowledge base..."):
                     try:
                         result = safe_query(prompt)
                         if isinstance(result, dict):
